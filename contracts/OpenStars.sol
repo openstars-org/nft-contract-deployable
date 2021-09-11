@@ -26,7 +26,7 @@ contract OpenStars is
     event ConsecutiveTransfer(uint256 indexed fromTokenId, uint256 toTokenId, address indexed fromAddress, address indexed toAddress);
 
     function initialize(address premintedAddress_) initializer public {
-        __ERC721_init("OpenStars", unicode"💫");
+        __ERC721_init("OpenStars", unicode"✨");
         __ERC721Enumerable_init();
         __Pausable_init();
         __AccessControl_init();
