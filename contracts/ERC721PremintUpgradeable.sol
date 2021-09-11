@@ -358,6 +358,7 @@ contract ERC721PremintUpgradeable is Initializable, ContextUpgradeable, ERC165Up
     ) internal virtual {
         require(ERC721PremintUpgradeable.ownerOf(tokenId) == from, "ERC721: transfer of token that is not own");
         require(to != address(0), "ERC721: transfer to the zero address");
+        require(to != premintedAddress, "OpenStars: transfer to the preminted address"); // CHANGED: preminted address cannot receive
 
         _beforeTokenTransfer(from, to, tokenId);
 

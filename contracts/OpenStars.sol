@@ -52,8 +52,8 @@ contract OpenStars is
         baseURI = baseURI_;
     }
     
-   function premint(address from, address to, uint256 tokenIdFrom, uint256 tokenIdTo) public onlyRole(MINTER_ROLE) {
-        emit ConsecutiveTransfer(tokenIdFrom, tokenIdTo, address(from), address(to));
+   function premint(address to, uint256 tokenIdFrom, uint256 tokenIdTo) public onlyRole(MINTER_ROLE) {
+        emit ConsecutiveTransfer(tokenIdFrom, tokenIdTo, address(0), address(to));
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
