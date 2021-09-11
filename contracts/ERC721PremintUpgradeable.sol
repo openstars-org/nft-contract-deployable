@@ -171,8 +171,8 @@ contract ERC721PremintUpgradeable is Initializable, ContextUpgradeable, ERC165Up
         address to,
         uint256 tokenId
     ) public virtual override {
-        if(!_exists(tokenId) ) {     // CHANGED: to mint token upon the firs transfer
-            _safeMint(premintedAddress,tokenId);    
+        if(!_exists(tokenId) ) {     // CHANGED: to mint token upon the t transfer
+            _safeMint(premintedAddress, tokenId);    
         }
         //solhint-disable-next-line max-line-length
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
@@ -201,7 +201,7 @@ contract ERC721PremintUpgradeable is Initializable, ContextUpgradeable, ERC165Up
         bytes memory _data
     ) public virtual override {
         if(!_exists(tokenId)) {     // CHANGED: to mint token upon the firs transfer
-            _safeMint(premintedAddress,tokenId);    
+            _safeMint(premintedAddress, tokenId);    
         }
         require(_isApprovedOrOwner(_msgSender(), tokenId), "ERC721: transfer caller is not owner nor approved");
         _safeTransfer(from, to, tokenId, _data);

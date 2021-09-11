@@ -25,7 +25,7 @@ contract OpenStars is
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     event ConsecutiveTransfer(uint256 indexed fromTokenId, uint256 toTokenId, address indexed fromAddress, address indexed toAddress);
 
-    function initialize() initializer public {
+    function initialize(address premintedAddress_) initializer public {
         __ERC721_init("OpenStars", unicode"💫");
         __ERC721Enumerable_init();
         __Pausable_init();
@@ -37,7 +37,9 @@ contract OpenStars is
         _setupRole(PAUSER_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _setupRole(UPGRADER_ROLE, msg.sender);
-        _setPremintedAddress(msg.sender);
+
+        _setPremintedAddress(premintedAddress_);
+        transferOwnership(premintedAddress_);
 
         baseURI = "https://raw.githubusercontent.com/openstars-org/stars-database/main/jsons/";
     }
@@ -50,11 +52,7 @@ contract OpenStars is
         baseURI = baseURI_;
     }
     
-    function setPremintedAddress(address premintedAddress_) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setPremintedAddress(premintedAddress_);
-    }
-    
-   function preMint(address from, address to, uint256 tokenIdFrom, uint256 tokenIdTo) public onlyRole(MINTER_ROLE) {
+   function premint(address from, address to, uint256 tokenIdFrom, uint256 tokenIdTo) public onlyRole(MINTER_ROLE) {
         emit ConsecutiveTransfer(tokenIdFrom, tokenIdTo, address(from), address(to));
     }
 
