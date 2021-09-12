@@ -108,21 +108,21 @@ context("OpenStars", () => {
     describe("Preminted address cannot receive tokens", async () => { // as it cannot emit Transfer event out
       it("preminted address cannot send token101 to itself", async () => { // self test
         await expect(premintedSafeTransfer(preminted.address, preminted.address, 101))
-          .to.be.revertedWith('OpenStars: preminted address cannot receive tokens');
+          .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
       it("opensea address cannot send token102 to preminted address", async () => { // approved test
         await expect(openSeaSafeTransfer(preminted.address, preminted.address, 102))
-          .to.be.revertedWith('OpenStars: preminted address cannot receive tokens');
+          .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
       it("deployer address cannot send token103 to preminted address", async () => { // minter role test
         await openSeaSafeTransfer(preminted.address, deployer.address, 103);
         await expect(deployerSafeTransfer(deployer.address, preminted.address, 103))
-          .to.be.revertedWith('OpenStars: preminted address cannot receive tokens');
+          .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
       it("user0 address cannot send token104 to preminted address", async () => { // outsider test
         await openSeaSafeTransfer(preminted.address, user0.address, 104);
         await expect(user0SafeTransfer(user0.address, preminted.address, 104))
-          .to.be.revertedWith('OpenStars: preminted address cannot receive tokens');
+          .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
     });
     describe("Non-existent tokens", async () => {
