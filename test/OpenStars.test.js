@@ -115,11 +115,15 @@ context("OpenStars", () => {
           .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
       it("deployer address cannot send token103 to preminted address", async () => { // minter role test
-        await openSeaSafeTransfer(preminted.address, deployer.address, 103);
+        // here we mint instead of transfering from opensea, to test safeMint
+        await expect(OpenStars.safeMint(deployer.address, 103))
+          .to.emit(OpenStars, "Transfer")
+          .withArgs(testConstants.zeroAddress, deployer.address, 103);
         await expect(deployerSafeTransfer(deployer.address, preminted.address, 103))
           .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
       it("user0 address cannot send token104 to preminted address", async () => { // outsider test
+        // here we transfer from opensea, to simulate a token purchase
         await openSeaSafeTransfer(preminted.address, user0.address, 104);
         await expect(user0SafeTransfer(user0.address, preminted.address, 104))
           .to.be.revertedWith('OpenStars: transfer to the preminted address');
