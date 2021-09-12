@@ -17,15 +17,20 @@ contract OpenStars is
     PausableUpgradeable,
     AccessControlUpgradeable,
     OwnableUpgradeable,
-    UUPSUpgradeable 
+    UUPSUpgradeable
 {
     string baseURI;
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
-    event ConsecutiveTransfer(uint256 indexed fromTokenId, uint256 toTokenId, address indexed fromAddress, address indexed toAddress);
+    event ConsecutiveTransfer(
+        uint256 indexed fromTokenId,
+        uint256 toTokenId,
+        address indexed fromAddress,
+        address indexed toAddress
+    );
 
-    function initialize(address premintedAddress_) initializer public {
+    function initialize(address premintedAddress_) public initializer {
         __ERC721_init("OpenStars", unicode"✨");
         __ERC721Enumerable_init();
         __Pausable_init();
@@ -48,12 +53,24 @@ contract OpenStars is
         return baseURI;
     }
 
-    function setBaseURI(string memory baseURI_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setBaseURI(string memory baseURI_)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         baseURI = baseURI_;
     }
-    
-   function premint(address to, uint256 tokenIdFrom, uint256 tokenIdTo) public onlyRole(MINTER_ROLE) {
-        emit ConsecutiveTransfer(tokenIdFrom, tokenIdTo, address(0), address(to));
+
+    function premint(
+        address to,
+        uint256 tokenIdFrom,
+        uint256 tokenIdTo
+    ) public virtual onlyRole(MINTER_ROLE) {
+        emit ConsecutiveTransfer(
+            tokenIdFrom,
+            tokenIdTo,
+            address(0),
+            address(to)
+        );
     }
 
     function pause() public onlyRole(PAUSER_ROLE) {
@@ -64,23 +81,29 @@ contract OpenStars is
         _unpause();
     }
 
-    function safeMint(address to, uint256 tokenId) public onlyRole(MINTER_ROLE) {
+    function safeMint(address to, uint256 tokenId)
+        public
+        onlyRole(MINTER_ROLE)
+    {
         _safeMint(to, tokenId);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    )
         internal
-        whenNotPaused
-        // override
         override(ERC721PremintUpgradeable, ERC721PremintEnumerableUpgradeable)
+        whenNotPaused
     {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
     function _authorizeUpgrade(address newImplementation)
         internal
-        onlyRole(UPGRADER_ROLE)
         override
+        onlyRole(UPGRADER_ROLE)
     {}
 
     // The following functions are overrides required by Solidity.
@@ -88,8 +111,11 @@ contract OpenStars is
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        // override(ERC721PremintUpgradeable, AccessControlUpgradeable)
-        override(ERC721PremintUpgradeable, ERC721PremintEnumerableUpgradeable, AccessControlUpgradeable)
+        override(
+            ERC721PremintUpgradeable,
+            ERC721PremintEnumerableUpgradeable,
+            AccessControlUpgradeable
+        )
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
