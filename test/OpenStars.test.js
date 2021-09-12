@@ -94,7 +94,7 @@ context("OpenStars", () => {
         await expect(OpenStars.connect(preminted).setApprovalForAll(opensea.address, true))
           .to.emit(OpenStars, "ApprovalForAll")
           .withArgs(preminted.address, opensea.address, true);
-      })
+      });
       it("opensea should transfer token70 to user0", async () => {
         await expect(openSeaSafeTransfer(preminted.address, user0.address, 70))
           .to.emit(OpenStars, "Transfer")
@@ -115,11 +115,15 @@ context("OpenStars", () => {
           .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
       it("deployer address cannot send token103 to preminted address", async () => { // minter role test
-        await openSeaSafeTransfer(preminted.address, deployer.address, 103);
+        // here we mint instead of transfering from opensea, to test safeMint
+        await expect(OpenStars.safeMint(deployer.address, 103))
+          .to.emit(OpenStars, "Transfer")
+          .withArgs(testConstants.zeroAddress, deployer.address, 103);
         await expect(deployerSafeTransfer(deployer.address, preminted.address, 103))
           .to.be.revertedWith('OpenStars: transfer to the preminted address');
       });
       it("user0 address cannot send token104 to preminted address", async () => { // outsider test
+        // here we transfer from opensea, to simulate a token purchase
         await openSeaSafeTransfer(preminted.address, user0.address, 104);
         await expect(user0SafeTransfer(user0.address, preminted.address, 104))
           .to.be.revertedWith('OpenStars: transfer to the preminted address');
@@ -139,18 +143,35 @@ context("OpenStars", () => {
   });
 
   describe("Proxy upgrade and state persists correctly", async () => {
-    describe('Proxy upgrade', async () => {
-      it("upgrades implementation correctly"); // upgrade inside there
+    let OpenStarsV2, OpenStarsV2Factory;
+
+    describe("Proxy upgrade", async () => {
+      it("loads contract factory", async () => {
+        OpenStarsV2Factory = await ethers.getContractFactory("OpenStarsUpgradeTest");
+      });
+      it("upgrades implementation correctly", async () => {
+        OpenStarsV2 = await upgrades.upgradeProxy(OpenStars.address, OpenStarsV2Factory);
+        await expect(OpenStarsV2.upgrade());
+      });
     });
     describe("State checks", async () => {
-      // verify upgrade
-      it("is owned by deployer");
-      it("ownership of previously minted tokens persists");
-
-      // and then repeat tests here
-      it("premints and only deployer can premint");
-      it("mints and only deployer can mint");
-      it("transfers and only deployer can transfer");
+      it("runs new method and values", async () => {
+        expect(await OpenStarsV2.test()).to.equal("hello world");
+      });
+      it("is still owned by preminted address", async () => {
+        expect(await OpenStarsV2.owner()).to.equal(preminted.address);
+      });
+      it("ownership of previously minted tokens persists", async () => {
+        expect(await OpenStarsV2.ownerOf(70)).to.be.equal(user0.address);
+        expect(await OpenStarsV2.ownerOf(105)).to.be.equal(user0.address);
+      });
+      // note that upgrade method changes preminted address to zero
+      it("still mints", async () => {
+        await expect(OpenStarsV2.safeMint(user0.address, 999))
+          .to.emit(OpenStarsV2, "Transfer")
+          .withArgs(testConstants.zeroAddress, user0.address, 999); // now from zero addres, not preminted
+        expect(await OpenStarsV2.ownerOf(999)).to.be.equal(user0.address);
+      });
     });
   })
 });
