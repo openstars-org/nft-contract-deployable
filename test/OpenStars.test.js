@@ -94,7 +94,7 @@ context("OpenStars", () => {
         await expect(OpenStars.connect(preminted).setApprovalForAll(opensea.address, true))
           .to.emit(OpenStars, "ApprovalForAll")
           .withArgs(preminted.address, opensea.address, true);
-      })
+      });
       it("opensea should transfer token70 to user0", async () => {
         await expect(openSeaSafeTransfer(preminted.address, user0.address, 70))
           .to.emit(OpenStars, "Transfer")
@@ -139,18 +139,35 @@ context("OpenStars", () => {
   });
 
   describe("Proxy upgrade and state persists correctly", async () => {
-    describe('Proxy upgrade', async () => {
-      it("upgrades implementation correctly"); // upgrade inside there
+    let OpenStarsV2, OpenStarsV2Factory;
+
+    describe("Proxy upgrade", async () => {
+      it("loads contract factory", async () => {
+        OpenStarsV2Factory = await ethers.getContractFactory("OpenStarsUpgradeTest");
+      });
+      it("upgrades implementation correctly", async () => {
+        OpenStarsV2 = await upgrades.upgradeProxy(OpenStars.address, OpenStarsV2Factory);
+        await expect(OpenStarsV2.upgrade());
+      });
     });
     describe("State checks", async () => {
-      // verify upgrade
-      it("is owned by deployer");
-      it("ownership of previously minted tokens persists");
-
-      // and then repeat tests here
-      it("premints and only deployer can premint");
-      it("mints and only deployer can mint");
-      it("transfers and only deployer can transfer");
+      it("runs new method and values", async () => {
+        expect(await OpenStarsV2.test()).to.equal("hello world");
+      });
+      it("is still owned by preminted address", async () => {
+        expect(await OpenStarsV2.owner()).to.equal(preminted.address);
+      });
+      it("ownership of previously minted tokens persists", async () => {
+        expect(await OpenStarsV2.ownerOf(70)).to.be.equal(user0.address);
+        expect(await OpenStarsV2.ownerOf(105)).to.be.equal(user0.address);
+      });
+      // note that upgrade method changes preminted address to zero
+      it("still mints", async () => {
+        await expect(OpenStarsV2.safeMint(user0.address, 999))
+          .to.emit(OpenStarsV2, "Transfer")
+          .withArgs(testConstants.zeroAddress, user0.address, 999); // now from zero addres, not preminted
+        expect(await OpenStarsV2.ownerOf(999)).to.be.equal(user0.address);
+      });
     });
   })
 });
