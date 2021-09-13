@@ -3,6 +3,7 @@
 const { ethers, upgrades } = require("hardhat");
 const { expect } = require("chai");
 const testConstants = require("./constants/index.js");
+const deploy = require("../scripts/deploy.helpers");
 
 context("OpenStars", () => {
   let deployer, user0, opensea, preminted;
@@ -13,12 +14,17 @@ context("OpenStars", () => {
   });
 
   describe("Contract and proxy deployment", async () => {
-    it('loads contract factory', async () => {
+    it('loads contract factory using hardhat', async () => { // only for testing
       OpenStarsFactory = await ethers.getContractFactory("OpenStars");
     });
-    it('deploys contract and proxy', async () => {
-      OpenStars = await upgrades.deployProxy(OpenStarsFactory, [preminted.address], { kind: "uups" });
+    it('deploys contract and proxy using openzeppelin upgrades', async () => { // only for testing
+      await upgrades.deployProxy(OpenStarsFactory, [preminted.address], { kind: "uups" });
     });
+    it("deploys smart contract using deployer", async () => { // we use this as it's more atomic
+      const implementationAddress = await deploy.implementationContract(true);
+      const proxyContractAddress = await deploy.proxyContract(implementationAddress, true);
+      OpenStars = await deploy.initialize(proxyContractAddress, preminted.address, true);
+    })
   });
 
   describe("Initialized values are correct", async () => {

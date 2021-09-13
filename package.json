@@ -1,5 +1,6 @@
 {
-  "name": "nft-",
+  "name": "openstars-nft-contract",
+  "version": "0.1.0",
   "main": "scripts/deploy.js",
   "scripts": {
     "deploy": "npx hardhat run --network frame deploy.js",
