@@ -1,13 +1,16 @@
 // npx hardhat test --network hardhat
 
-const { ethers, upgrades } = require("hardhat");
+const { ethers, waffle, upgrades } = require("hardhat");
 const { expect } = require("chai");
 const testConstants = require("./constants/index.js");
 const deploy = require("../scripts/deploy.helpers");
 
+
 context("OpenStars", () => {
   let deployer, user0, opensea, preminted;
-  let OpenStars, OpenStarsFactory;
+  let OpenStars, OpenStarsFactory, Minter;
+  let implementationAddress, proxyContractAddress;
+  let minterContract;
 
   before(async () => {
     [ deployer, user0, opensea, preminted ] = await ethers.getSigners();
@@ -21,10 +24,18 @@ context("OpenStars", () => {
       await upgrades.deployProxy(OpenStarsFactory, [preminted.address], { kind: "uups" });
     });
     it("deploys smart contract using deployer", async () => { // we use this as it's more atomic
-      const implementationAddress = await deploy.implementationContract(true);
-      const proxyContractAddress = await deploy.proxyContract(implementationAddress, true);
+      implementationAddress = await deploy.implementationContract(true);
+      proxyContractAddress = await deploy.proxyContract(implementationAddress, true);
       OpenStars = await deploy.initialize(proxyContractAddress, preminted.address, true);
     })
+    it("deploys Minter contract", async () => {
+      minterAddress = await deploy.minter(proxyContractAddress);
+      Minter = await ethers.getContractFactory("OpenStarsMinter");
+      minterContract = await Minter.attach(minterAddress);
+      console.log("proxyContractAddress", proxyContractAddress);
+      console.log("nftContract", await minterContract.nftContract());
+      expect(await minterContract.nftContract()).to.equal(proxyContractAddress);
+    });
   });
 
   describe("Initialized values are correct", async () => {
@@ -146,9 +157,65 @@ context("OpenStars", () => {
           .to.be.revertedWith('ERC721: transfer caller is not owner nor approved');
       });
     });
+    describe("External Minter", async () => {
+      it("grants minter role to minter contract", async () => {
+        await OpenStars.grantRole("0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6", minterContract.address);
+      });
+      it("test stars belong initially to preminter", async () => {
+        expect(await OpenStars.ownerOf(23)).to.be.equal(preminted.address)
+        expect(await OpenStars.ownerOf(24)).to.be.equal(preminted.address)
+        expect(await OpenStars.ownerOf(25)).to.be.equal(preminted.address)
+      });
+      it("fails with no enough ether", async () => {
+        let options = {value: ethers.utils.parseEther("0.0")}
+        await expect(minterContract.connect(user0).mintStars([23], options)).to.be.revertedWith('not enough ETH sent');
+        await expect(minterContract.connect(user0).mintStars([23,24], options)).to.be.revertedWith('not enough ETH sent');
+      });
+      it("succeeds minting one star", async () => {
+        let options = {value: ethers.utils.parseEther("0.1")}
+        expect(await minterContract.connect(user0).mintStars([23], options));
+        expect(await OpenStars.ownerOf(23)).to.be.equal(user0.address);
+      });
+      it("fails minting 2 stars with no enough ether", async () => {
+        let options = {value: ethers.utils.parseEther("0.1")}
+        await expect(minterContract.connect(user0).mintStars([24,25], options)).to.be.revertedWith('not enough ETH sent');
+      });
+      it("succeeds minting two stars", async () => {
+        let options = {value: ethers.utils.parseEther("0.2")}
+        expect(await minterContract.connect(user0).mintStars([24,25], options));
+        expect(await OpenStars.ownerOf(24)).to.be.equal(user0.address);
+        expect(await OpenStars.ownerOf(25)).to.be.equal(user0.address);
+      });
+      it("fails trying to ming 0 stars", async () => {
+        let options = {value: ethers.utils.parseEther("0.1")}
+        await expect(minterContract.connect(user0).mintStars([], options)).to.be.revertedWith('cannot mint 0');
+      });
+      it("deployer can withdraw eth", async () => {
+        const initialDeployerBalance = await waffle.provider.getBalance(deployer.address);
+        const initialMinterBalance = await waffle.provider.getBalance(minterContract.address);
+        console.log('initialMinterBalance',initialMinterBalance.toString());
+        console.log('initialDeployerBalance',initialDeployerBalance.toString());
+
+        const txWithdraw = await minterContract.withdraw();
+        const receipt = await txWithdraw.wait()
+
+        const deployerBalance = await waffle.provider.getBalance(deployer.address);
+        const finalDeployerBalance = await waffle.provider.getBalance(deployer.address);
+        console.log('finalDeployerBalance',finalDeployerBalance.toString());
+
+        expect(initialDeployerBalance.add(initialMinterBalance).sub(receipt.gasUsed.mul(receipt.effectiveGasPrice))).to.be.equal(finalDeployerBalance);
+      });
+      it("minter balance is 0", async () => {
+        const finalMinterBalance = await waffle.provider.getBalance(minterContract.address);
+        expect(finalMinterBalance).to.be.equal(0);
+        console.log('finalMinterBalance',finalMinterBalance.toString());
+      }); 
+    });
+
   });
 
   describe("Proxy upgrade and state persists correctly", async () => {
+    return; //TODO: Delete this
     let OpenStarsV2, OpenStarsV2Factory;
 
     describe("Proxy upgrade", async () => {
@@ -175,7 +242,7 @@ context("OpenStars", () => {
       it("still mints", async () => {
         await expect(OpenStarsV2.safeMint(user0.address, 999))
           .to.emit(OpenStarsV2, "Transfer")
-          .withArgs(testConstants.zeroAddress, user0.address, 999); // now from zero addres, not preminted
+          .withArgs(testConstants.zeroAddress, user0.address, 999); // now from zero address, not preminted
         expect(await OpenStarsV2.ownerOf(999)).to.be.equal(user0.address);
       });
     });

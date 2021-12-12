@@ -1,14 +1,15 @@
 const { getProxyFactory } = require('@openzeppelin/hardhat-upgrades/dist/utils/factories');
 
-const contractName = "OpenStars";
+const nftContractName = "OpenStars";
+const minterContractName = "OpenStarsMinter";
 
 function _log(silent, ...args) {
     if(!silent) console.log.apply(console, args);
 }
 
 exports.implementationContract = async (silent = false) => {
-    _log(silent, 'loading contract', contractName);
-    const nftContract = await ethers.getContractFactory(contractName);
+    _log(silent, 'loading contract', nftContractName);
+    const nftContract = await ethers.getContractFactory(nftContractName);
     
     _log(silent, 'deploying implementation contract');
     let nftContractTx = await nftContract.deploy();
@@ -19,7 +20,7 @@ exports.implementationContract = async (silent = false) => {
 }
 
 exports.proxyContract = async (nftContractAddress, silent = false) => {
-    const nftContract = await ethers.getContractFactory(contractName);
+    const nftContract = await ethers.getContractFactory(nftContractName);
     
     _log(silent, 'deploying proxy contract using implementation at', nftContractAddress);
     const proxyContract = await getProxyFactory(hre, nftContract.signer);
@@ -33,7 +34,7 @@ exports.proxyContract = async (nftContractAddress, silent = false) => {
 }
 
 exports.initialize = async (proxyAddress, premintedAddress, silent = false) => {
-    const nftContract = await ethers.getContractFactory(contractName);
+    const nftContract = await ethers.getContractFactory(nftContractName);
     const proxyContract = await nftContract.attach(proxyAddress);
     
     _log(silent, "initialize contract using proxy");
@@ -44,7 +45,7 @@ exports.initialize = async (proxyAddress, premintedAddress, silent = false) => {
 }
 
 exports.premint = async (proxyAddress, premintedAddress, silent = false) => {
-    const nftContract = await ethers.getContractFactory(contractName);
+    const nftContract = await ethers.getContractFactory(nftContractName);
     const proxyContract = await nftContract.attach(proxyAddress);
     
     _log(silent, "premint assets from 0 to 999 for", premintedAddress);
@@ -52,4 +53,16 @@ exports.premint = async (proxyAddress, premintedAddress, silent = false) => {
     await premintTx.wait();
     _log(silent, "premint assets at", premintTx.hash);
     return proxyContract;
+}
+
+exports.minter = async (proxyAddress, silent = false) => {
+    _log(silent, 'loading contract', nftContractName);
+    const minterContract = await ethers.getContractFactory(minterContractName);
+    
+    _log(silent, 'deploying implementation contract');
+    let minterContractTx = await minterContract.deploy(proxyAddress);
+    _log(silent, "contract broadcasted:", minterContractTx.deployTransaction.hash);
+    await minterContractTx.deployed();
+    _log(silent, 'implementation deployed at', minterContractTx.address)
+    return minterContractTx.address;
 }
