@@ -34,4 +34,7 @@ contract OpenStarsMinter is Ownable {
         payable(msg.sender).transfer(balance);
     }
 
+    function setStarPrice(uint256 starPrice_) public onlyOwner {
+        starPrice = starPrice_;
+    }
 }
