@@ -8,9 +8,10 @@ import "./OpenStars.sol";
 contract OpenStarsMinter is Ownable {
     using SafeMath for uint256;
     OpenStars public nftContract;
-    uint256 starPrice = 1 * 10**17;
+    uint256 starPrice;
 
-    constructor(address OSNFT_) {
+    constructor(address OSNFT_, uint256 starPrice_) {
+        setStarPrice(starPrice_);
         nftContract = OpenStars(OSNFT_);
     }
 
@@ -35,6 +36,7 @@ contract OpenStarsMinter is Ownable {
     }
 
     function setStarPrice(uint256 starPrice_) public onlyOwner {
+        require(starPrice_ > 0, "The new price cannot be 0");
         starPrice = starPrice_;
     }
 }
