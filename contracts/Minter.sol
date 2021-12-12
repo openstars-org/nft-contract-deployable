@@ -17,7 +17,7 @@ contract OpenStarsMinter is Ownable {
 
     function mintStars(uint256[] memory starId) external payable {
         uint256 amount = starId.length;
-        require(amount >= 1 , "cannot mint 0");
+        require(amount > 0 , "cannot mint 0");
         uint256 toPay = starPrice.mul(amount);
         require(toPay <= msg.value, "not enough ETH sent");
         for (uint i=0; i < amount; i++) {

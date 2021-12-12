@@ -29,7 +29,7 @@ context("OpenStars", () => {
       OpenStars = await deploy.initialize(proxyContractAddress, preminted.address, true);
     })
     it("deploys Minter contract", async () => {
-      minterAddress = await deploy.minter(proxyContractAddress);
+      minterAddress = await deploy.minter(proxyContractAddress, ethers.utils.parseEther("0.1"));
       Minter = await ethers.getContractFactory("OpenStarsMinter");
       minterContract = await Minter.attach(minterAddress);
       console.log("proxyContractAddress", proxyContractAddress);
