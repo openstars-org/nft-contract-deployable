@@ -5,8 +5,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./OpenStars.sol";
 
-import "hardhat/console.sol";
-
 contract OpenStarsMinter is Ownable {
     using SafeMath for uint256;
     OpenStars public nftContract;
