@@ -8,7 +8,7 @@ import "./OpenStars.sol";
 contract OpenStarsMinter is Ownable {
     using SafeMath for uint256;
     OpenStars public nftContract;
-    uint256 starPrice;
+    uint256 public starPrice;
 
     constructor(address OSNFT_, uint256 starPrice_) {
         setStarPrice(starPrice_);
