@@ -29,7 +29,7 @@ context("OpenStars", () => {
       OpenStars = await deploy.initialize(proxyContractAddress, preminted.address, true);
     })
     it("deploys Minter contract", async () => {
-      minterAddress = await deploy.minter(proxyContractAddress, ethers.utils.parseEther("0.1"),1,999);
+      minterAddress = await deploy.minter(proxyContractAddress, ethers.utils.parseEther("0.1"),1,999,5);
       Minter = await ethers.getContractFactory("OpenStarsMinter");
       minterContract = await Minter.attach(minterAddress);
       console.log("proxyContractAddress", proxyContractAddress);
@@ -186,9 +186,23 @@ context("OpenStars", () => {
         expect(await OpenStars.ownerOf(24)).to.be.equal(user0.address);
         expect(await OpenStars.ownerOf(25)).to.be.equal(user0.address);
       });
+
+      it("succeeds minting five stars", async () => {
+        let options = {value: ethers.utils.parseEther("1")}
+        expect(await minterContract.connect(user0).mintStars([31,32,33,34,35], options));
+        expect(await OpenStars.ownerOf(31)).to.be.equal(user0.address);
+        expect(await OpenStars.ownerOf(32)).to.be.equal(user0.address);
+        expect(await OpenStars.ownerOf(33)).to.be.equal(user0.address);
+        expect(await OpenStars.ownerOf(34)).to.be.equal(user0.address);
+        expect(await OpenStars.ownerOf(35)).to.be.equal(user0.address);
+      });
       it("fails trying to ming 0 stars", async () => {
         let options = {value: ethers.utils.parseEther("0.1")}
-        await expect(minterContract.connect(user0).mintStars([], options)).to.be.revertedWith('cannot mint 0');
+        await expect(minterContract.connect(user0).mintStars([], options)).to.be.revertedWith('minting amout out of range');
+      });
+      it("fails trying to mint too many stars", async () => {
+        let options = {value: ethers.utils.parseEther("10")}
+        await expect(minterContract.connect(user0).mintStars([60,61,62,63,64,65], options)).to.be.revertedWith('minting amout out of range');
       });
       it("deployer can withdraw eth", async () => {
         const initialDeployerBalance = await waffle.provider.getBalance(deployer.address);

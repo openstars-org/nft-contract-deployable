@@ -11,23 +11,25 @@ contract OpenStarsMinter is Ownable {
     uint256 public starPrice;
     uint256 public minId;
     uint256 public maxId;
+    uint256 public mintingLimit;
 
 
-    constructor(address OSNFT_, uint256 starPrice_, uint256 minId_, uint256 maxId_) {
+    constructor(address OSNFT_, uint256 starPrice_, uint256 minId_, uint256 maxId_, uint256 mintingLimit_) {
         setStarPrice(starPrice_);
         nftContract = OpenStars(OSNFT_);
         minId = minId_;
         maxId =  maxId_;
+        mintingLimit = mintingLimit_;
     }
 
-    function mintStars(uint256[] memory starId) external payable {
-        uint256 amount = starId.length;
-        require(amount > 0 , "cannot mint 0");
+    function mintStars(uint256[] memory starIds) external payable {
+        uint256 amount = starIds.length;
+        require(amount > 0 && amount <= mintingLimit, "minting amout out of range");
         uint256 toPay = starPrice.mul(amount);
         require(toPay <= msg.value, "not enough ETH sent");
         for (uint i=0; i < amount; i++) {
-            require(starId[i] >= minId && starId[i] <= maxId, "id out of range");
-            nftContract.safeMint(msg.sender, starId[i]);
+            require(starIds[i] >= minId && starIds[i] <= maxId, "id out of range");
+            nftContract.safeMint(msg.sender, starIds[i]);
         }
     }
 
@@ -49,5 +51,9 @@ contract OpenStarsMinter is Ownable {
     function setRange(uint256 minId_, uint256 maxId_) public onlyOwner {  
         minId = minId_;
         maxId =  maxId_;
+    }
+
+    function setMintingLimit(uint256 mintingLimit_) public onlyOwner {  
+        mintingLimit = mintingLimit_;
     }
 }
