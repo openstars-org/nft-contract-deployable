@@ -26,8 +26,7 @@ contract OpenStarsMinter is Ownable {
         uint256 toPay = starPrice.mul(amount);
         require(toPay <= msg.value, "not enough ETH sent");
         for (uint i=0; i < amount; i++) {
-            require(starId[i] >= minId, "good attempt! but the sun belongs to the dao");
-            require(starId[i] <= maxId, "the universe is infinite, but not all stars are for sale, yet");
+            require(starId[i] >= minId && starId[i] <= maxId, "id out of range");
             nftContract.safeMint(msg.sender, starId[i]);
         }
     }
