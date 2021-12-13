@@ -55,12 +55,12 @@ exports.premint = async (proxyAddress, premintedAddress, silent = false) => {
     return proxyContract;
 }
 
-exports.minter = async (proxyAddress, starPrice, silent = false) => {
+exports.minter = async (proxyAddress, starPrice, minId, maxId, silent = false) => {
     _log(silent, 'loading contract', nftContractName);
     const minterContract = await ethers.getContractFactory(minterContractName);
     
     _log(silent, 'deploying implementation contract');
-    let minterContractTx = await minterContract.deploy(proxyAddress, starPrice);
+    let minterContractTx = await minterContract.deploy(proxyAddress, starPrice, minId, maxId);
     _log(silent, "contract broadcasted:", minterContractTx.deployTransaction.hash);
     await minterContractTx.deployed();
     _log(silent, 'implementation deployed at', minterContractTx.address)

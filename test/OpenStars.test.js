@@ -29,7 +29,7 @@ context("OpenStars", () => {
       OpenStars = await deploy.initialize(proxyContractAddress, preminted.address, true);
     })
     it("deploys Minter contract", async () => {
-      minterAddress = await deploy.minter(proxyContractAddress, ethers.utils.parseEther("0.1"));
+      minterAddress = await deploy.minter(proxyContractAddress, ethers.utils.parseEther("0.1"),1,999);
       Minter = await ethers.getContractFactory("OpenStarsMinter");
       minterContract = await Minter.attach(minterAddress);
       console.log("proxyContractAddress", proxyContractAddress);
@@ -209,7 +209,21 @@ context("OpenStars", () => {
         const finalMinterBalance = await waffle.provider.getBalance(minterContract.address);
         expect(finalMinterBalance).to.be.equal(0);
         console.log('finalMinterBalance',finalMinterBalance.toString());
-      }); 
+      });
+      it("cannot mint the sun", async () => {
+        let options = {value: ethers.utils.parseEther("0.2")}
+        await expect(minterContract.connect(user0).mintStars([0], options)).to.be.revertedWith('good attempt! but the sun belongs to the dao');
+        await expect(minterContract.connect(user0).mintStars([50,0], options)).to.be.revertedWith('good attempt! but the sun belongs to the dao');
+        expect(await OpenStars.ownerOf(0)).to.be.equal(preminted.address);
+        expect(await OpenStars.ownerOf(50)).to.be.equal(preminted.address);
+      });
+      it("cannot mint stars above the maxId", async () => {
+        let options = {value: ethers.utils.parseEther("0.2")}
+        await expect(minterContract.connect(user0).mintStars([1000], options)).to.be.revertedWith('the universe is infinite, but not all stars are for sale, yet');
+        await expect(minterContract.connect(user0).mintStars([51,1000], options)).to.be.revertedWith('the universe is infinite, but not all stars are for sale, yet');
+        expect(await OpenStars.ownerOf(51)).to.be.equal(preminted.address);
+        expect(await OpenStars.ownerOf(1000)).to.be.equal(preminted.address);
+      });
     });
 
   });
