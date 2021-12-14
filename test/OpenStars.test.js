@@ -204,6 +204,10 @@ context("OpenStars", () => {
         let options = {value: ethers.utils.parseEther("10")}
         await expect(minterContract.connect(user0).mintStars([60,61,62,63,64,65], options)).to.be.revertedWith('minting amout out of range');
       });
+      it("fails minting the same star twice", async () => {
+        let options = {value: ethers.utils.parseEther("0.2")}
+        await expect(minterContract.connect(user0).mintStars([70,70], options)).to.be.revertedWith('ERC721: token already minted');
+      });
       it("deployer can withdraw eth", async () => {
         const initialDeployerBalance = await waffle.provider.getBalance(deployer.address);
         const initialMinterBalance = await waffle.provider.getBalance(minterContract.address);
