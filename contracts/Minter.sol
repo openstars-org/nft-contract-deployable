@@ -12,17 +12,29 @@ contract OpenStarsMinter is Ownable {
     uint256 public minId;
     uint256 public maxId;
     uint256 public mintingLimit;
+    uint16 public affiliateFeeThousandthDivisor;
 
-
-    constructor(address OSNFT_, uint256 starPrice_, uint256 minId_, uint256 maxId_, uint256 mintingLimit_) {
+    constructor(
+        address OSNFT_,
+        uint256 starPrice_,
+        uint256 minId_,
+        uint256 maxId_,
+        uint256 mintingLimit_,
+        uint16 affiliateFeeThousandthDivisor_
+    ) {
         setStarPrice(starPrice_);
         nftContract = OpenStars(OSNFT_);
         minId = minId_;
         maxId =  maxId_;
         mintingLimit = mintingLimit_;
+        setAffiliateFeeThousandthDivisor(affiliateFeeThousandthDivisor_); // i.e. (100) / 1000 = 10% fee
     }
 
-    function mintStars(uint256[] memory starIds) external payable {
+    function setAffiliateFeeThousandthDivisor(uint16 affiliateFeeThousandthDivisor_) public onlyOwner {
+        affiliateFeeThousandthDivisor = affiliateFeeThousandthDivisor_;
+    }
+
+    function mintStars(uint256[] memory starIds, address payable referral) external payable {
         uint256 amount = starIds.length;
         require(amount > 0 && amount <= mintingLimit, "minting amout out of range");
         uint256 toPay = starPrice.mul(amount);
@@ -30,6 +42,9 @@ contract OpenStarsMinter is Ownable {
         for (uint i=0; i < amount; i++) {
             require(starIds[i] >= minId && starIds[i] <= maxId, "id out of range");
             nftContract.safeMint(msg.sender, starIds[i]);
+        }
+        if(referral != address(0) && affiliateFeeThousandthDivisor > 0) {
+            referral.transfer(toPay * affiliateFeeThousandthDivisor / 1000);
         }
     }
 
